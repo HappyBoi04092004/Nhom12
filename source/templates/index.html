@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dự Đoán Điểm Số</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
+      }
+
+      .container {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        padding: 40px;
+        max-width: 600px;
+        width: 100%;
+      }
+
+      h1 {
+        color: #333;
+        text-align: center;
+        margin-bottom: 30px;
+        font-size: 2em;
+      }
+
+      .form-group {
+        margin-bottom: 20px;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 8px;
+        color: #555;
+        font-weight: 600;
+        font-size: 14px;
+      }
+
+      input[type="number"] {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 16px;
+        transition: border-color 0.3s;
+      }
+
+      input[type="number"]:focus {
+        outline: none;
+        border-color: #667eea;
+      }
+
+      .btn-predict {
+        width: 100%;
+        padding: 15px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 18px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.2s, box-shadow 0.2s;
+        margin-top: 10px;
+      }
+
+      .btn-predict:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+      }
+
+      .btn-predict:active {
+        transform: translateY(0);
+      }
+
+      .result {
+        margin-top: 30px;
+        padding: 20px;
+        background: #f8f9fa;
+        border-radius: 10px;
+        display: none;
+      }
+
+      .result.show {
+        display: block;
+        animation: fadeIn 0.5s;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .result-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 15px;
+      }
+
+      .prediction-value {
+        font-size: 36px;
+        font-weight: bold;
+        color: #667eea;
+        text-align: center;
+        margin: 20px 0;
+      }
+
+      .metrics {
+        margin-top: 30px;
+        padding-top: 30px;
+        border-top: 2px solid #e0e0e0;
+      }
+
+      .metrics-title {
+        font-size: 20px;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      .metrics-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+      }
+
+      .metric-card {
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        text-align: center;
+      }
+
+      .metric-label {
+        font-size: 14px;
+        color: #666;
+        margin-bottom: 10px;
+      }
+
+      .metric-value {
+        font-size: 28px;
+        font-weight: bold;
+        color: #764ba2;
+      }
+
+      .loading {
+        display: none;
+        text-align: center;
+        margin-top: 20px;
+      }
+
+      .loading.show {
+        display: block;
+      }
+
+      .spinner {
+        border: 3px solid #f3f3f3;
+        border-top: 3px solid #667eea;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      .error {
+        background: #fee;
+        color: #c33;
+        padding: 15px;
+        border-radius: 8px;
+        margin-top: 20px;
+        display: none;
+      }
+
+      .error.show {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Dự Đoán Điểm Toán (TestScore_Math)</h1>
+
+      <form id="predictionForm">
+        <div class="form-group">
+          <label for="TestScore_Reading">Điểm Đọc (TestScore_Reading)(0-100)</label>
+          <input
+            type="number"
+            id="TestScore_Reading"
+            name="TestScore_Reading"
+            step="0.01"
+            min="0"
+            max="100"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="TestScore_Science"
+            >Điểm Khoa Học (TestScore_Science)(0-100)</label
+          >
+          <input
+            type="number"
+            id="TestScore_Science"
+            name="TestScore_Science"
+            step="0.01"
+            min="0"
+            max="100"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="GPA">Điểm Trung Bình (GPA)(0-4)</label>
+          <input
+            type="number"
+            id="GPA"
+            name="GPA"
+            step="0.01"
+            min="0"
+            max="4"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="StudyHours">Số Giờ Học (StudyHours)(> 0)</label>
+          <input
+            type="number"
+            id="StudyHours"
+            name="StudyHours"
+            step="0.1"
+            min="0"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="AttendanceRate"
+            >Tỷ Lệ Tham Gia (AttendanceRate) (0-1)</label
+          >
+          <input
+            type="number"
+            id="AttendanceRate"
+            name="AttendanceRate"
+            step="0.01"
+            min="0"
+            max="100"
+            required
+          />
+        </div>
+
+        <button type="submit" class="btn-predict">Dự Đoán</button>
+      </form>
+
+      <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <p style="margin-top: 10px; color: #666">Đang xử lý...</p>
+      </div>
+
+      <div class="error" id="error"></div>
+
+      <div class="result" id="result">
+        <div class="result-title">Kết Quả Dự Đoán</div>
+        <div
+          style="
+            text-align: center;
+            color: #666;
+            margin-bottom: 10px;
+            font-size: 14px;
+          "
+        >
+          Điểm Toán (TestScore_Math)
+        </div>
+        <div class="prediction-value" id="predictionValue">-</div>
+      </div>
+
+      <div class="metrics">
+        <div class="metrics-title">Độ Chính Xác Mô Hình</div>
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <div class="metric-label">R² Score</div>
+            <div class="metric-value" id="r2Value">{{ r2 }}</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">RMSE</div>
+            <div class="metric-value" id="rmseValue">{{ rmse }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const form = document.getElementById("predictionForm");
+      const resultDiv = document.getElementById("result");
+      const loadingDiv = document.getElementById("loading");
+      const errorDiv = document.getElementById("error");
+      const predictionValue = document.getElementById("predictionValue");
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        // Ẩn kết quả và lỗi cũ
+        resultDiv.classList.remove("show");
+        errorDiv.classList.remove("show");
+
+        // Hiển thị loading
+        loadingDiv.classList.add("show");
+
+        // Lấy dữ liệu từ form
+        const formData = {
+          TestScore_Reading: parseFloat(
+            document.getElementById("TestScore_Reading").value
+          ),
+          TestScore_Science: parseFloat(
+            document.getElementById("TestScore_Science").value
+          ),
+          GPA: parseFloat(document.getElementById("GPA").value),
+          StudyHours: parseFloat(document.getElementById("StudyHours").value),
+          AttendanceRate: parseFloat(
+            document.getElementById("AttendanceRate").value
+          ),
+        };
+
+        try {
+          const response = await fetch("/predict", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(formData),
+          });
+
+          const data = await response.json();
+
+          loadingDiv.classList.remove("show");
+
+          if (response.ok) {
+            // Hiển thị kết quả
+            predictionValue.textContent = data.prediction;
+            resultDiv.classList.add("show");
+
+            // Cập nhật metrics nếu có thay đổi
+            if (data.r2 !== undefined) {
+              document.getElementById("r2Value").textContent =
+                data.r2.toFixed(6);
+            }
+            if (data.rmse !== undefined) {
+              document.getElementById("rmseValue").textContent =
+                data.rmse.toFixed(6);
+            }
+          } else {
+            // Hiển thị lỗi
+            errorDiv.textContent = data.error || "Có lỗi xảy ra";
+            errorDiv.classList.add("show");
+          }
+        } catch (error) {
+          loadingDiv.classList.remove("show");
+          errorDiv.textContent = "Lỗi kết nối: " + error.message;
+          errorDiv.classList.add("show");
+        }
+      });
+
+      // Load metrics khi trang được tải
+      window.addEventListener("load", async () => {
+        try {
+          const response = await fetch("/metrics");
+          const data = await response.json();
+          document.getElementById("r2Value").textContent = data.R2.toFixed(6);
+          document.getElementById("rmseValue").textContent =
+            data.RMSE.toFixed(6);
+        } catch (error) {
+          console.error("Lỗi khi tải metrics:", error);
+        }
+      });
+    </script>
+  </body>
+</html>
